@@ -15,7 +15,11 @@ const GEMINI_URL =
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+}));
 app.use(express.json());
 
 // Gemini helper
@@ -36,8 +40,8 @@ const askGemini = async (prompt) => {
   return data.candidates[0].content.parts[0].text;
 };
 
-// Storage setup
-const uploadsDir = path.join(__dirname, 'uploads');
+// Storage setup — use /tmp on Vercel (read-only FS outside /tmp)
+const uploadsDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
@@ -65,7 +69,7 @@ const upload = multer({
 
 // In-memory document store
 let documents = [];
-const documentsFile = path.join(__dirname, 'documents.json');
+const documentsFile = process.env.VERCEL ? '/tmp/documents.json' : path.join(__dirname, 'documents.json');
 
 // Load documents from file on startup
 if (fs.existsSync(documentsFile)) {
