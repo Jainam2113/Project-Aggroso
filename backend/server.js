@@ -5,14 +5,12 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-const { GoogleGenAI } = require('@google/genai');
-
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const GEMINI_API_KEY = 'AIzaSyCBCYmNwWwR-huOwV9TmNYrT7HeKjlEkFs';
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const GEMINI_API_KEY = 'AIzaSyAM5u_zG-XbzqnhufDzJU6Weh7jdGObTO4';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 // Middleware
 app.use(cors({
@@ -24,11 +22,20 @@ app.use(express.json());
 
 // Gemini helper
 const askGemini = async (prompt) => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-lite',
-    contents: prompt,
+  const response = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.3 }
+    })
   });
-  return response.text;
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Gemini API error: ${err}`);
+  }
+  const data = await response.json();
+  return data.candidates[0].content.parts[0].text;
 };
 
 // Storage setup — use /tmp on Vercel (read-only FS outside /tmp)
@@ -262,6 +269,10 @@ Please answer the question based on the documents above. Cite the document name 
 
   } catch (error) {
     console.error('Ask error:', error);
+    const msg = error.message || '';
+    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')) {
+      return res.status(429).json({ error: 'API limit is exhausted. Please try again later.' });
+    }
     res.status(500).json({ error: 'Failed to process question' });
   }
 });
