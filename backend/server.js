@@ -105,9 +105,11 @@ app.get('/api/health', async (req, res) => {
     timestamp: new Date().toISOString()
   };
 
-  // Check if documents file is accessible
+  // Check if documents file is accessible (healthy if writable or not yet created)
   try {
-    fs.accessSync(documentsFile, fs.constants.R_OK | fs.constants.W_OK);
+    if (fs.existsSync(documentsFile)) {
+      fs.accessSync(documentsFile, fs.constants.R_OK | fs.constants.W_OK);
+    }
     health.database = 'healthy';
   } catch (err) {
     health.database = 'unhealthy';
