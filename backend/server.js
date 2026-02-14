@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const GEMINI_API_KEY = 'AIzaSyAM5u_zG-XbzqnhufDzJU6Weh7jdGObTO4';
+const GEMINI_API_KEY = ;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 // Middleware
